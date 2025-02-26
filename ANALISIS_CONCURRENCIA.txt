@@ -1,1 +1,31 @@
-
+ANÁLISIS DE CONCURRENCIA
+ 
+Condiciones de carrera identificadas:
+ 
+Dos hilos podrían intentar agregar un Blueprint con el mismo autor y nombre al mismo tiempo.
+ 
+Un hilo podría estar leyendo un Blueprint mientras otro lo modifica.
+ 
+Un hilo podría estar iterando sobre la colección de Blueprints mientras otro la modifica.
+ 
+Regiones críticas identificadas:
+ 
+Métodos saveBlueprint, getBlueprint, getBlueprintsByAuthor y getAllBluePrints en InMemoryBlueprintPersistence.
+ 
+Métodos addNewBlueprint, getBlueprint, getBlueprintsByAuthor y getAllBlueprints en BlueprintsServices.
+ 
+ 
+Soluciones aplicadas:
+ 
+En el modulo de persistencia (InMemoryBlueprintPersistence) se reemplazó HashMap por ConcurrentHashMap para manejar acceso concurrente. 
+ 
+En el modulo de persistencia (InMemoryBlueprintPersistence) utilizamos ReadWriteLock para permitir múltiples lecturas simultáneas pero bloquear escrituras.
+ 
+Se sincronizaron solo las secciones críticas del código para minimizar el impacto en el rendimiento.
+ 
+ 
+Resultados:
+ 
+Las condiciones de carrera han sido eliminadas.
+ 
+El desempeño de la API no se ha degradado significativamente, ya que se usaron estrategias como bloqueos finos y estructuras de datos concurrentes.
