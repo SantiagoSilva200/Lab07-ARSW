@@ -1,62 +1,58 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.eci.arsw.blueprints.persistence.impl;
 
 import edu.eci.arsw.blueprints.model.Blueprint;
 import edu.eci.arsw.blueprints.model.Point;
-import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintPersistenceException;
+import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintsPersistence;
-
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.stereotype.Repository;
+public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
 
-/**
- *
- * @author hcadavid
- */
-
-@Repository
-public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
-
-    private final Map<Tuple<String,String>,Blueprint> blueprints=new HashMap<>();
+    private final Map<String, Blueprint> blueprints = new HashMap<>();
 
     public InMemoryBlueprintPersistence() {
-        //load stub data
-        Point[] pts=new Point[]{new Point(140, 140),new Point(115, 115)};
-        Blueprint bp=new Blueprint("_authorname_", "_bpname_ ",pts);
-        blueprints.put(new Tuple<>(bp.getAuthor(),bp.getName()), bp);
-        
-    }    
-    
+        Point[] points1 = {new Point(10, 10), new Point(20, 20)};
+        Blueprint bp1 = new Blueprint("author1", "blueprint1", points1);
+
+        Point[] points2 = {new Point(30, 30), new Point(40, 40)};
+        Blueprint bp2 = new Blueprint("author1", "blueprint2", points2);
+
+        Point[] points3 = {new Point(50, 50), new Point(60, 60)};
+        Blueprint bp3 = new Blueprint("author2", "blueprint3", points3);
+
+        blueprints.put("author1_blueprint1", bp1);
+        blueprints.put("author1_blueprint2", bp2);
+        blueprints.put("author2_blueprint3", bp3);
+    }
+
     @Override
     public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException {
-        if (blueprints.containsKey(new Tuple<>(bp.getAuthor(),bp.getName()))){
-            throw new BlueprintPersistenceException("The given blueprint already exists: "+bp);
+        String key = bp.getAuthor() + "_" + bp.getName();
+        if (blueprints.containsKey(key)) {
+            throw new BlueprintPersistenceException("Blueprint already exists: " + key);
         }
-        else{
-            blueprints.put(new Tuple<>(bp.getAuthor(),bp.getName()), bp);
-        }        
+        blueprints.put(key, bp);
     }
 
     @Override
     public Blueprint getBlueprint(String author, String bprintname) throws BlueprintNotFoundException {
-        return blueprints.get(new Tuple<>(author, bprintname));
+        String key = author + "_" + bprintname;
+        if (!blueprints.containsKey(key)) {
+            throw new BlueprintNotFoundException("Blueprint not found: " + key);
+        }
+        return blueprints.get(key);
     }
 
     @Override
-    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException {
+    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintPersistenceException, BlueprintNotFoundException {
         Set<Blueprint> authorBlueprints = new HashSet<>();
-        for (Map.Entry<Tuple<String, String>, Blueprint> entry : blueprints.entrySet()) {
-            if (entry.getKey().getElem1().equals(author)) {
+        for (Map.Entry<String, Blueprint> entry : blueprints.entrySet()) {
+            if (entry.getKey().startsWith(author + "_")) {
                 authorBlueprints.add(entry.getValue());
             }
         }
@@ -67,10 +63,7 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
     }
 
     @Override
-    public Set<Blueprint> getAllBluePrints() {
+    public Set<Blueprint> getAllBluePrints() throws BlueprintPersistenceException {
         return new HashSet<>(blueprints.values());
     }
-
-
-
 }
