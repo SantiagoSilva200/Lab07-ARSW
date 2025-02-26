@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Blueprint {
 
     private String author=null;
     
-    private List<Point> points=null;
+    private List<Point> points=new CopyOnWriteArrayList<>();
     
     private String name=null;
             
@@ -87,7 +87,7 @@ public class Blueprint {
     }
 
     public void setPoints(List<Point> points) {
-        this.points = new ArrayList<>(points);
+        this.points = new CopyOnWriteArrayList<>(points);
     }
 
 

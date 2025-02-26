@@ -5,15 +5,18 @@ import edu.eci.arsw.blueprints.model.Point;
 import edu.eci.arsw.blueprints.persistence.BlueprintPersistenceException;
 import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintsPersistence;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
 
-    private final Map<String, Blueprint> blueprints = new HashMap<>();
+    private final Map<String, Blueprint> blueprints = new ConcurrentHashMap<>();
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 
     public InMemoryBlueprintPersistence() {
         Point[] points1 = {new Point(10, 10), new Point(20, 20)};
@@ -32,24 +35,37 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
 
     @Override
     public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException {
-        String key = bp.getAuthor() + "_" + bp.getName();
-        if (blueprints.containsKey(key)) {
-            throw new BlueprintPersistenceException("Blueprint already exists: " + key);
+        rwLock.writeLock().lock();
+        try {
+            String key = bp.getAuthor() + "_" + bp.getName();
+            if (blueprints.containsKey(key)) {
+                throw new BlueprintPersistenceException("Blueprint already exists: " + key);
+            }
+            blueprints.put(key, bp);
+
+        } finally {
+            rwLock.writeLock().unlock();
         }
-        blueprints.put(key, bp);
     }
 
     @Override
     public Blueprint getBlueprint(String author, String bprintname) throws BlueprintNotFoundException {
+        rwLock.writeLock().lock();
+        try {
         String key = author + "_" + bprintname;
         if (!blueprints.containsKey(key)) {
             throw new BlueprintNotFoundException("Blueprint not found: " + key);
         }
         return blueprints.get(key);
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     @Override
     public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintPersistenceException, BlueprintNotFoundException {
+        rwLock.writeLock().lock();
+        try {
         Set<Blueprint> authorBlueprints = new HashSet<>();
         for (Map.Entry<String, Blueprint> entry : blueprints.entrySet()) {
             if (entry.getKey().startsWith(author + "_")) {
@@ -60,10 +76,20 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
             throw new BlueprintNotFoundException("No blueprints found for author: " + author);
         }
         return authorBlueprints;
+
+        } finally {
+            rwLock.readLock().unlock();
+
+        }
     }
 
     @Override
     public Set<Blueprint> getAllBluePrints() throws BlueprintPersistenceException {
-        return new HashSet<>(blueprints.values());
+        rwLock.readLock().lock();
+        try{
+            return new HashSet<>(blueprints.values());
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 }
