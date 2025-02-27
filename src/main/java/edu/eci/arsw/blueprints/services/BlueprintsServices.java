@@ -73,5 +73,9 @@ public class BlueprintsServices {
         Set<Blueprint> blueprints = bpp.getBlueprintsByAuthor(author);
         return blueprints.stream().map(filter::filter).collect(Collectors.toSet());
     }
+
+    public void updateBlueprint(String author, String name, Blueprint updatedBlueprint) throws BlueprintNotFoundException {
+        bpp.updateBlueprint(author, name, updatedBlueprint);
+    }
     
 }

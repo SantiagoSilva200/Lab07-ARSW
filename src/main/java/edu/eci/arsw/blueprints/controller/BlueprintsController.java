@@ -60,4 +60,14 @@ public class BlueprintsController {
             return ResponseEntity.status(404).body("No se encontraron blueprints para el autor: " + author);
         }
     }
+
+    @PutMapping("/{author}/{name}")
+    public ResponseEntity<?> updateBlueprint(@PathVariable String author, @PathVariable String name, @RequestBody Blueprint blueprint) {
+        try {
+            blueprintServices.updateBlueprint(author, name, blueprint);
+            return ResponseEntity.ok().build();
+        } catch (BlueprintNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
