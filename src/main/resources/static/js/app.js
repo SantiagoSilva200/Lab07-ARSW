@@ -56,10 +56,8 @@ const app = (function () {
         let canvas = document.getElementById("blueprintCanvas");
         let ctx = canvas.getContext("2d");
 
-        // Limpiar el canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Dibujar líneas entre los puntos
         if (blueprint.points.length > 1) {
             ctx.beginPath();
             ctx.moveTo(blueprint.points[0].x, blueprint.points[0].y);
