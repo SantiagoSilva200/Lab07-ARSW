@@ -1,6 +1,8 @@
 const app = (function () {
-    let author = "";  
-    let blueprints = []; 
+    let author = "";
+    let blueprints = [];
+
+    const api = apiclient;
 
     function setAuthor(newAuthor) {
         author = newAuthor;
@@ -9,7 +11,7 @@ const app = (function () {
     function getBlueprintsByAuthor(autor) {
         setAuthor(autor);
 
-        apimock.getBlueprintsByAuthor(autor, function(data) {
+        api.getBlueprintsByAuthor(autor, function(data) {
             if (!data || data.length === 0) {
                 alert("No se encontraron planos para el autor.");
                 $("#blueprintsBody").empty();

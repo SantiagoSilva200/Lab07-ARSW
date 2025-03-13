@@ -31,10 +31,22 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
 
         Point[] points3 = {new Point(50, 50), new Point(60, 60)};
         Blueprint bp3 = new Blueprint("author2", "blueprint3", points3);
+        Point[] points4 = {new Point(100, 200), new Point(200, 200)};
+        Blueprint bp4 = new Blueprint("author2", "blueprint4", points4);
+        Point[] housePoints = {
+                new Point(100, 200), new Point(200, 200),
+                new Point(200, 300), new Point(100, 300),
+                new Point(100, 200), new Point(100, 200),
+                new Point(150, 150), new Point(200, 200)
+        };
+        Blueprint bpHouse = new Blueprint("santiagosilva", "Dr.House", housePoints);
 
+        // Agregar los blueprints al mapa
         blueprints.put("author1_blueprint1", bp1);
         blueprints.put("author1_blueprint2", bp2);
         blueprints.put("author2_blueprint3", bp3);
+        blueprints.put("author2_blueprint4", bp4);
+        blueprints.put("santiagosilva_House", bpHouse);
     }
 
     @Override

@@ -22,7 +22,7 @@ const apimock = (function () {
 
     mockdata["santiagocordoba"] = [
         { author: "santiagocordoba", points: [{ x: 150, y: 30 }, { x: 120, y: 45}], name: "road" },
-        { author: "santiagocordoba", points: [{ x: 180, y: 90 }, { x: 200, y: 120 }], name: "lovesAnatoomuch" }
+        { author: "santiagocordoba", points: [{ x: 180, y: 90 }, { x: 200, y: 120 }], name: "LeBronTheGoat" }
     ];
 
     return {
