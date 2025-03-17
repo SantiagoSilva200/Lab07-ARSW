@@ -1,7 +1,8 @@
 const app = (function () {
     let author = "";
     let blueprints = [];
-    let clickCount = 0; // Variable para contar los clics
+    let clickCount = 0; // Contador de clics
+    let currentBlueprintName = null; // Almacena el nombre del plano actual
 
     const api = apiclient;
 
@@ -56,6 +57,9 @@ const app = (function () {
             return;
         }
 
+        // Actualizar el plano actual
+        currentBlueprintName = blueprintName;
+
         let canvas = document.getElementById("blueprintCanvas");
         let ctx = canvas.getContext("2d");
 
@@ -74,10 +78,7 @@ const app = (function () {
             ctx.stroke();
         }
 
-        // Reiniciar el contador de clics
-        clickCount = 0;
-        $("#clickCounter").text(clickCount);
-
+        // Mostrar el nombre del plano
         $("#blueprintName").text(`Plano: ${blueprintName}`).show();
         $("#blueprintCanvas").show();
     }
@@ -86,6 +87,11 @@ const app = (function () {
         let canvas = document.getElementById("blueprintCanvas");
         if (canvas) {
             canvas.addEventListener("pointerdown", function(event) {
+                if (!currentBlueprintName) {
+                    alert("No hay un plano abierto.");
+                    return;
+                }
+
                 let rect = canvas.getBoundingClientRect();
                 let x = event.clientX - rect.left;
                 let y = event.clientY - rect.top;
@@ -93,20 +99,26 @@ const app = (function () {
 
                 // Incrementar el contador de clics
                 clickCount++;
-                // Actualizar el contador en pantalla
                 $("#clickCounter").text(clickCount);
+
+                // Agregar el punto a la lista de puntos del plano actual
+                let blueprint = blueprints.find(bp => bp.name === currentBlueprintName);
+                if (blueprint) {
+                    blueprint.points.push({ x: x, y: y });
+                    drawBlueprint(currentBlueprintName); // Repintar el dibujo
+                }
             });
         }
     }
 
     $(document).on("click", ".open-blueprint", function () {
         let blueprintName = $(this).data("name");
-        drawBlueprint(blueprintName);
-    });
 
-    // Inicializar los manejadores de eventos cuando el documento esté listo
-    $(document).ready(function () {
-        setupCanvasEventListeners();
+        // Reiniciar el contador de clics al abrir un nuevo plano
+        clickCount = 0;
+        $("#clickCounter").text(clickCount);
+
+        drawBlueprint(blueprintName);
     });
 
     $(document).ready(function () {
@@ -120,11 +132,12 @@ const app = (function () {
         });
     });
 
+    // Inicializar los manejadores de eventos cuando el documento esté listo
+    $(document).ready(function () {
+        setupCanvasEventListeners();
+    });
+
     return {
         getBlueprintsByAuthor: getBlueprintsByAuthor
     };
 })();
-
-
-
-
