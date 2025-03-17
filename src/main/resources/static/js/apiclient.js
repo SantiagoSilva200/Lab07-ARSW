@@ -24,6 +24,15 @@ const apiclient = (function () {
                     console.error("Error obteniendo el plano:", error);
                     callback(null);
                 });
+        },
+
+        updateBlueprint: function (blueprintData) {
+            return $.ajax({
+                url: `${API_URL}/${blueprintData.author}/${blueprintData.name}`,
+                type: 'PUT',
+                data: JSON.stringify(blueprintData), 
+                contentType: "application/json"
+            });
         }
     };
 })();
