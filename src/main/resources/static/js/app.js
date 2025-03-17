@@ -1,6 +1,7 @@
 const app = (function () {
     let author = "";
     let blueprints = [];
+    let clickCount = 0; // Variable para contar los clics
 
     const api = apiclient;
 
@@ -73,8 +74,29 @@ const app = (function () {
             ctx.stroke();
         }
 
+        // Reiniciar el contador de clics
+        clickCount = 0;
+        $("#clickCounter").text(clickCount);
+
         $("#blueprintName").text(`Plano: ${blueprintName}`).show();
         $("#blueprintCanvas").show();
+    }
+
+    function setupCanvasEventListeners() {
+        let canvas = document.getElementById("blueprintCanvas");
+        if (canvas) {
+            canvas.addEventListener("pointerdown", function(event) {
+                let rect = canvas.getBoundingClientRect();
+                let x = event.clientX - rect.left;
+                let y = event.clientY - rect.top;
+                console.log(`Click en: (${x}, ${y})`);
+
+                // Incrementar el contador de clics
+                clickCount++;
+                // Actualizar el contador en pantalla
+                $("#clickCounter").text(clickCount);
+            });
+        }
     }
 
     $(document).on("click", ".open-blueprint", function () {
@@ -82,18 +104,27 @@ const app = (function () {
         drawBlueprint(blueprintName);
     });
 
+    // Inicializar los manejadores de eventos cuando el documento esté listo
+    $(document).ready(function () {
+        setupCanvasEventListeners();
+    });
+
+    $(document).ready(function () {
+        $("#getBlueprints").click(function () {
+            let authorName = $("#authorName").val().trim();
+            if (authorName) {
+                app.getBlueprintsByAuthor(authorName);
+            } else {
+                alert("Por favor, ingrese un nombre de autor.");
+            }
+        });
+    });
+
     return {
         getBlueprintsByAuthor: getBlueprintsByAuthor
     };
 })();
 
-$(document).ready(function () {
-    $("#getBlueprints").click(function () {
-        let authorName = $("#authorName").val().trim();
-        if (authorName) {
-            app.getBlueprintsByAuthor(authorName);
-        } else {
-            alert("Por favor, ingrese un nombre de autor.");
-        }
-    });
-});
+
+
+
