@@ -1,195 +1,129 @@
 const app = (function () {
-    let author = "";
-    let blueprints = [];
-    let clickCount = 0;
-    let currentBlueprintName = null;
-
+    let author = "", blueprints = [], clickCount = 0, currentBlueprintName = null;
     const api = apiclient;
 
-    function setAuthor(newAuthor) {
-        author = newAuthor;
+    function setAuthor(newAuthor) { author = newAuthor; }
+
+    function updateBlueprintsTable() {
+        $("#blueprintsBody").empty();
+        blueprints.forEach(bp => $("#blueprintsBody").append(
+            `<tr><td>${bp.name}</td><td>${bp.points.length}</td><td><button class="btn btn-info open-blueprint" data-name="${bp.name}">Abrir</button></td></tr>`
+        ));
+        $("#totalPoints").text(blueprints.reduce((sum, bp) => sum + bp.points.length, 0));
+    }
+
+    function fetchAndUpdateBlueprints() {
+        return new Promise((resolve, reject) => {
+            api.getBlueprintsByAuthor(author, data => data ? resolve(data) : reject("Error obteniendo planos actualizados."));
+        }).then(data => {
+            blueprints = data.map(bp => ({ name: bp.name, points: bp.points, author: bp.author }));
+            updateBlueprintsTable();
+        });
     }
 
     function getBlueprintsByAuthor(autor) {
         setAuthor(autor);
-
-        api.getBlueprintsByAuthor(autor, function(data) {
+        currentBlueprintName = null;
+        api.getBlueprintsByAuthor(autor, data => {
             if (!data || data.length === 0) {
                 alert("No se encontraron planos para el autor.");
-                $("#blueprintsBody").empty();
-                $("#totalPoints").text("0");
-                $("#blueprintsTable").hide();
-                $("#totalContainer").hide();
-                $("#blueprintCanvas").hide();
-                $("#blueprintName").hide();
+                $("#blueprintsBody, #totalPoints").empty();
+                $("#blueprintsTable, #totalContainer, #blueprintCanvas, #blueprintName, #new, #SaveUp, #dele").hide();
                 return;
             }
-
-            blueprints = data.map(bp => ({
-                name: bp.name,
-                points: bp.points
-            }));
-
+            blueprints = data.map(bp => ({ name: bp.name, points: bp.points, author: bp.author }));
             $("#selectedAuthor").text(author);
-            $("#blueprintsBody").empty();
-
-            blueprints.forEach(bp => {
-                $("#blueprintsBody").append(
-                    `<tr>
-                        <td>${bp.name}</td>
-                        <td>${bp.points.length}</td>
-                        <td><button class="btn btn-info open-blueprint" data-name="${bp.name}">Abrir</button></td>
-                    </tr>`
-                );
-            });
-
-            let totalPoints = blueprints.reduce((sum, bp) => sum + bp.points.length, 0);
-            $("#totalPoints").text(totalPoints);
-            $("#blueprintsTable").show();
-            $("#totalContainer").show();
+            updateBlueprintsTable();
+            $("#blueprintsTable, #totalContainer, #new, #SaveUp, #dele").show();
         });
     }
 
     function drawBlueprint(blueprintName) {
         let blueprint = blueprints.find(bp => bp.name === blueprintName);
-        if (!blueprint) {
-            alert("No se encontraron datos del plano.");
-            return;
-        }
-
+        if (!blueprint) return alert("No se encontraron datos del plano.");
         currentBlueprintName = blueprintName;
-
-        let canvas = document.getElementById("blueprintCanvas");
-        let ctx = canvas.getContext("2d");
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        let ctx = document.getElementById("blueprintCanvas").getContext("2d");
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         if (blueprint.points.length > 1) {
             ctx.beginPath();
             ctx.moveTo(blueprint.points[0].x, blueprint.points[0].y);
-
-            for (let i = 1; i < blueprint.points.length; i++) {
-                ctx.lineTo(blueprint.points[i].x, blueprint.points[i].y);
-            }
-
+            blueprint.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
             ctx.strokeStyle = "blue";
             ctx.lineWidth = 2;
             ctx.stroke();
         }
-
         $("#blueprintName").text(`Plano: ${blueprintName}`).show();
         $("#blueprintCanvas").show();
     }
 
     function setupCanvasEventListeners() {
-        let canvas = document.getElementById("blueprintCanvas");
-        if (canvas) {
-            canvas.addEventListener("pointerdown", function(event) {
-                if (!currentBlueprintName) {
-                    alert("No hay un plano abierto.");
-                    return;
-                }
-
-                let rect = canvas.getBoundingClientRect();
-                let x = event.clientX - rect.left;
-                let y = event.clientY - rect.top;
-                console.log(`Click en: (${x}, ${y})`);
-
-                clickCount++;
-                $("#clickCounter").text(clickCount);
-
-                let blueprint = blueprints.find(bp => bp.name === currentBlueprintName);
-                if (blueprint) {
-                    blueprint.points.push({ x: x, y: y });
-                    drawBlueprint(currentBlueprintName);
-                }
-            });
-        }
+        document.getElementById("blueprintCanvas")?.addEventListener("pointerdown", event => {
+            if (!currentBlueprintName) return alert("No hay un plano abierto.");
+            let rect = event.target.getBoundingClientRect();
+            let x = event.clientX - rect.left, y = event.clientY - rect.top;
+            blueprints.find(bp => bp.name === currentBlueprintName)?.points.push({ x, y });
+            drawBlueprint(currentBlueprintName);
+            $("#clickCounter").text(++clickCount);
+        });
     }
 
     $(document).on("click", ".open-blueprint", function () {
-        let blueprintName = $(this).data("name");
-
         clickCount = 0;
         $("#clickCounter").text(clickCount);
+        drawBlueprint($(this).data("name"));
+    });
 
-        drawBlueprint(blueprintName);
+    $(document).on("click", "#new", function () {
+        let ctx = document.getElementById("blueprintCanvas").getContext("2d");
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        let blueprintName = prompt("Ingrese el nombre del nuevo plano:");
+        if (!blueprintName) return alert("Debe ingresar un nombre para el nuevo plano.");
+        currentBlueprintName = blueprintName;
+        clickCount = 0;
+        $("#clickCounter").text(clickCount);
+        $("#blueprintName").text(`Plano: ${blueprintName}`).show();
+        $("#blueprintCanvas").show();
+        api.createBlueprint({ name: blueprintName, points: [], author: author })
+            .then(fetchAndUpdateBlueprints)
+            .then(() => alert("Plano creado exitosamente."))
+            .catch(error => alert("Hubo un error al crear el plano."));
     });
 
     $(document).on("click", "#SaveUp", function () {
-        if (!currentBlueprintName) {
-            alert("No hay un plano abierto.");
-            return;
-        }
-
+        if (!currentBlueprintName) return alert("No hay un plano abierto.");
         let blueprint = blueprints.find(bp => bp.name === currentBlueprintName);
-        if (!blueprint) {
-            alert("No se encontró el plano actual.");
-            return;
-        }
+        if (!blueprint) return alert("No se encontró el plano actual.");
+        let blueprintData = { author: author, name: blueprint.name, points: blueprint.points };
+        (blueprint.author ? api.updateBlueprint(blueprintData) : api.createBlueprint(blueprintData))
+            .then(fetchAndUpdateBlueprints)
+            .then(() => alert(blueprint.author ? "Plano actualizado exitosamente." : "Plano creado exitosamente."))
+            .catch(error => alert(`Hubo un error al ${blueprint.author ? 'actualizar' : 'crear'} el plano.`));
+    });
 
-        let blueprintData = {
-            author: author,
-            name: blueprint.name,
-            points: blueprint.points
-        };
-
-        api.updateBlueprint(blueprintData)
-            .then(function () {
-                return new Promise(function (resolve, reject) {
-                    api.getBlueprintsByAuthor(author, function (data) {
-                        if (data) {
-                            resolve(data);
-                        } else {
-                            reject("Error obteniendo planos actualizados.");
-                        }
-                    });
-                });
+    $(document).on("click", "#dele", function () {
+        if (!currentBlueprintName) return alert("No hay un plano abierto.");
+        let ctx = document.getElementById("blueprintCanvas").getContext("2d");
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        api.deleteBlueprint(author, currentBlueprintName)
+            .then(fetchAndUpdateBlueprints)
+            .then(() => {
+                currentBlueprintName = null;
+                clickCount = 0;
+                $("#clickCounter").text(clickCount);
+                $("#blueprintName").text("").hide();
+                $("#blueprintCanvas").hide();
+                alert("Plano eliminado exitosamente.");
             })
-            .then(function (data) {
-                blueprints = data.map(bp => ({
-                    name: bp.name,
-                    points: bp.points
-                }));
-
-                $("#blueprintsBody").empty();
-                blueprints.forEach(bp => {
-                    $("#blueprintsBody").append(
-                        `<tr>
-                            <td>${bp.name}</td>
-                            <td>${bp.points.length}</td>
-                            <td><button class="btn btn-info open-blueprint" data-name="${bp.name}">Abrir</button></td>
-                        </tr>`
-                    );
-                });
-
-                let totalPoints = blueprints.reduce((sum, bp) => sum + bp.points.length, 0);
-                $("#totalPoints").text(totalPoints);
-
-                alert("Plano actualizado exitosamente.");
-            })
-            .catch(function (error) {
-                console.error("Error al actualizar el plano:", error);
-                alert("Hubo un error al actualizar el plano.");
-            });
+            .catch(error => alert("Hubo un error al eliminar el plano."));
     });
 
     $(document).ready(function () {
         $("#getBlueprints").click(function () {
             let authorName = $("#authorName").val().trim();
-            if (authorName) {
-                app.getBlueprintsByAuthor(authorName);
-            } else {
-                alert("Por favor, ingrese un nombre de autor.");
-            }
+            authorName ? (setAuthor(authorName), getBlueprintsByAuthor(authorName)) : alert("Por favor, ingrese un nombre de autor.");
         });
-    });
-
-    $(document).ready(function () {
         setupCanvasEventListeners();
     });
 
-    return {
-        getBlueprintsByAuthor: getBlueprintsByAuthor
-    };
+    return { getBlueprintsByAuthor };
 })();

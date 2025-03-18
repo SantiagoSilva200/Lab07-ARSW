@@ -26,11 +26,28 @@ const apiclient = (function () {
                 });
         },
 
+        createBlueprint: function (blueprintData) {
+            return $.ajax({
+                url: `${API_URL}`,
+                type: 'POST',
+                data: JSON.stringify(blueprintData), 
+                contentType: "application/json"
+            });
+        },
+
         updateBlueprint: function (blueprintData) {
             return $.ajax({
                 url: `${API_URL}/${blueprintData.author}/${blueprintData.name}`,
                 type: 'PUT',
                 data: JSON.stringify(blueprintData), 
+                contentType: "application/json"
+            });
+        },
+
+        deleteBlueprint: function (author, blueprintName) {
+            return $.ajax({
+                url: `${API_URL}/${author}/${blueprintName}`,
+                type: 'DELETE',
                 contentType: "application/json"
             });
         }
