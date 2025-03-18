@@ -119,4 +119,22 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
             rwLock.writeLock().unlock();
         }
     }
+
+    @Override
+    public boolean deleteBlueprint(String author, String name) {
+        rwLock.writeLock().lock();
+        try {
+            String key = author + "_" + name;
+            if (!blueprints.containsKey(key)) {
+                return false;
+            }
+            blueprints.remove(key);
+            return true;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+
+
 }

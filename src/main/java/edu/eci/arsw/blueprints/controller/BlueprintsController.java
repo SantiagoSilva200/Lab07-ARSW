@@ -70,4 +70,16 @@ public class BlueprintsController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @DeleteMapping("/{author}/{name}")
+    public ResponseEntity<?> deleteBlueprint(@PathVariable String author, @PathVariable String name) {
+        try {
+            blueprintServices.deleteBlueprint(author, name);
+            return ResponseEntity.noContent().build();
+        } catch (BlueprintNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error al eliminar el blueprint: " + e.getMessage());
+        }
+    }
 }
